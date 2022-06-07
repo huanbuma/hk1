@@ -1,1 +1,32 @@
-dm1lc3M6Ly9ldzBLSUNBaWRpSTZJQ0l5SWl3TkNpQWdJbkJ6SWpvZ0ltVnRhVzVsTXpJeE5qY3VZMjl0SWl3TkNpQWdJbUZrWkNJNklDSm9heTU2YjNWMGFHVnRhVzVsTXpJeE5qY3VZMjl0SWl3TkNpQWdJbkJ2Y25RaU9pQWlORFF6SWl3TkNpQWdJbWxrSWpvZ0lqZzJOamd6WVRGaExUTTNPR1F0TkRjeE15MWhNekZqTFRreE1tTTFNak5rTnpnMll5SXNEUW9nSUNKaGFXUWlPaUFpTUNJc0RRb2dJQ0p6WTNraU9pQWlZWFYwYnlJc0RRb2dJQ0p1WlhRaU9pQWlkM01pTEEwS0lDQWlkSGx3WlNJNklDSnViMjVsSWl3TkNpQWdJbWh2YzNRaU9pQWlhR3N1ZW05MWRHaGxiV2x1WlRNeU1UWTNMbU52YlNJc0RRb2dJQ0p3WVhSb0lqb2dJaTl2ZDBjd01YRnBZemhIZDA0aUxBMEtJQ0FpZEd4eklqb2dJblJzY3lJc0RRb2dJQ0p6Ym1raU9pQWlJZzBLZlE9PQ0K
+#!/bin/bash
+
+apt-get purge -y unattended-upgrades update-manager-core
+apt-get install -y vim && update-alternatives --set editor /usr/bin/vim.basic
+locale-gen en_US.UTF-8 && update-locale LANG=en_US.UTF-8
+
+dpkg -l|grep -q "^ii  docker-ce"
+
+if [[ $? != 0 ]]; then
+    # Offical
+    #curl -fsSL https://download.docker.com/linux/ubuntu/gpg | gpg --yes --dearmor -o /usr/share/keyrings/docker-archive-keyring.gpg
+    #echo "deb [arch=amd64 signed-by=/usr/share/keyrings/docker-archive-keyring.gpg] https://download.docker.com/linux/ubuntu $(lsb_release -cs) stable" > /etc/apt/sources.list.d/docker.list
+
+    # ustc mirror
+    #curl -fsSL https://mirrors.ustc.edu.cn/docker-ce/linux/ubuntu/gpg | sudo apt-key add -
+    #echo "deb [arch=amd64] https://mirrors.ustc.edu.cn/docker-ce/linux/ubuntu $(lsb_release -cs) stable" > /etc/apt/sources.list.d/docker.list
+
+    # Aliyun mirror
+    curl -fsSL http://mirrors.aliyun.com/docker-ce/linux/ubuntu/gpg | sudo apt-key add -
+    echo "deb [arch=amd64] http://mirrors.aliyun.com/docker-ce/linux/ubuntu $(lsb_release -cs) stable" > /etc/apt/sources.list.d/docker.list
+
+    apt-get install -y apt-transport-https ca-certificates curl gnupg lsb-release
+    apt-get update && apt-get install -y docker-ce docker-ce-cli containerd.io
+fi
+
+if [[ `docker ps -a |grep SUPERMINER_MANAGE|wc -l` > 0 ]]; then
+    docker stop SUPERMINER_MANAGE && docker rm SUPERMINER_MANAGE && docker rmi solarshipx/manage:latest
+fi
+
+ver=${1:-latest}
+docker pull solarshipx/manage:$ver
+docker run -d --restart always --name SUPERMINER_MANAGE --network host -v /var/run/docker.sock:/var/run/docker.sock -v /usr/local/superminer:/usr/local/superminer solarshipx/manage:$ver manage
